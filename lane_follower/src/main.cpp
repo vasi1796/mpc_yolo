@@ -8,7 +8,7 @@ int main()
 {
     cv::Mat frame;
     frame = cv::imread("../res/test2.jpg");
-    LaneController controller;
+    LaneController controller(frame.cols,frame.rows);
 
     std::vector<Point2i> coords = controller.lane_segment(frame);
     controller.run_mpc(coords);

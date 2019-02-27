@@ -4,7 +4,11 @@
 //
 // Created by vasy1 on 2/27/2019.
 //
-LaneController::LaneController():
+LaneController::LaneController(int width, int height):
+        m_width(width),
+        m_height(height),
+        m_slicedH(m_height - m_cropYOorigin),
+        m_slicedW(m_width),
         m_perspectiveSrc{Point2f(m_slicedW / 2.f - 50, 20), Point2f(150, m_slicedH),
                          Point2f(m_slicedW - 20, m_slicedH), Point2f(m_slicedW / 2.f + 80, 20)},
         m_perspectiveDst{Point2f(150, 0), Point2f(150, m_slicedH), Point2f(m_slicedW, m_slicedH),
@@ -16,14 +20,14 @@ LaneController::LaneController():
 
 void LaneController::run_mpc(std::vector<Point2i> coords)
 {
-    std::vector<Eigen::Map<Eigen::VectorXd>> mpc_coords_rot = utility::rotate_coords(coords);
+    std::vector<Eigen::Map<Eigen::VectorXd>> mpc_coords_rot = utilities::rotate_coords(coords);
 
     MPC mpc;
     //find coeffs of ref
-    auto coeffs = utility::polyfit(mpc_coords_rot[0], mpc_coords_rot[1], 3);
+    auto coeffs = utilities::polyfit(mpc_coords_rot[0], mpc_coords_rot[1], 3);
 
     //find cross track error
-    double cte = utility::polyeval(coeffs, 0); // px = 0, py = 0
+    double cte = utilities::polyeval(coeffs, 0); // px = 0, py = 0
 
     //find angle diff
     double epsi = -atan(coeffs[1]); // p

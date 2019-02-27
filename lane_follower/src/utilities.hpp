@@ -7,7 +7,7 @@
 #include <iostream>
 #include <opencv2/opencv.hpp>
 
-namespace utility
+namespace utilities
 {
     static constexpr double pi() { return M_PI; }
 

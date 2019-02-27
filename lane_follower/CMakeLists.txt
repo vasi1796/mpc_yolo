@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.5)
 project(lane_follower)
 
 set(CMAKE_CXX_STANDARD 14)
-set(SOURCES src/main.cpp src/utilities.hpp src/MPC.cpp src/MPC.h)
+set(SOURCES src/main.cpp src/utilities.hpp src/MPC.cpp src/MPC.h src/LaneController.h src/LaneController.cpp)
 
 find_package(OpenCV REQUIRED)
 

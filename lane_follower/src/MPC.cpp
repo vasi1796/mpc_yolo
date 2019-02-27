@@ -57,14 +57,14 @@ class FG_eval {
     }
 
     for (int i = 0; i < N - 1; i++)  {
-      fg[0] += 100*CppAD::pow(vars[delta_start + i], 2);
+      fg[0] += 200*CppAD::pow(vars[delta_start + i], 2);
       fg[0] += 100*CppAD::pow(vars[a_start + i], 2);
       // try adding penalty for speed + steer
       fg[0] += CppAD::pow(vars[delta_start + i] * vars[v_start+i], 2);
     }
 
     for (int i = 0; i < N - 2; i++) {
-      fg[0] += 100*CppAD::pow(vars[delta_start + i + 1] - vars[delta_start + i], 2);
+      fg[0] += 200*CppAD::pow(vars[delta_start + i + 1] - vars[delta_start + i], 2);
       fg[0] += CppAD::pow(vars[a_start + i + 1] - vars[a_start + i], 2);
     }
 
@@ -105,8 +105,8 @@ class FG_eval {
         a = vars[a_start + t - 2];
         delta = vars[delta_start + t - 2];
       }
-      AD<double> f0 = coeffs[0] + coeffs[1] * x0 + coeffs[2] * CppAD::pow(x0, 2) + coeffs[3] * CppAD::pow(x0, 3);
-      AD<double> psides0 = CppAD::atan(coeffs[1] + 2 * coeffs[2] * x0 + 3 * coeffs[3] * CppAD::pow(x0, 2));
+      AD<double> f0 = coeffs[0] + coeffs[1] * x0 + coeffs[2] * CppAD::pow(x0, 2) + coeffs[3] * CppAD::pow(x0, 3) + coeffs[4]*CppAD::pow(x0,4);
+      AD<double> psides0 = CppAD::atan(coeffs[1] + 2 * coeffs[2] * x0 + 3 * coeffs[3] * CppAD::pow(x0, 2)+4*coeffs[4]*CppAD::pow(x0,3));
 
       // Here's `x` to get you started.
       // The idea here is to constraint this value to be 0.
@@ -192,7 +192,7 @@ vector<double> MPC::Solve(Eigen::VectorXd state, Eigen::VectorXd coeffs) {
   // Acceleration/decceleration upper and lower limits.
   // NOTE: Feel free to change this to something else.
   for (int i = a_start; i < n_vars; i++) {
-    vars_lowerbound[i] = -0.8;
+    vars_lowerbound[i] = 0.5;
     vars_upperbound[i] = 0.8;
   }
 

@@ -60,15 +60,12 @@ namespace utilities
         const double cos_psi = cos(deg2rad(-90));
         std::vector<double> waypoints_x;
         std::vector<double> waypoints_y;
-        std::cout << "mpc rot coords" << std::endl;
         for (auto &coord : coords)
         {
             double dx = coord.x - px;
             double dy = coord.y - py;
             waypoints_x.push_back(dx * cos_psi - dy * sin_psi);
             waypoints_y.push_back(dx * sin_psi + dy * cos_psi);
-            std::cout << waypoints_x.back() << " " << waypoints_y.back() << std::endl;
-            //std::cout<<dx<<" "<<dy<<std::endl;
         }
 
         double *ptrx = &waypoints_x[0];

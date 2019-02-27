@@ -7,11 +7,26 @@
 int main()
 {
     cv::Mat frame;
-    frame = cv::imread("../res/test2.jpg");
-    LaneController controller(frame.cols,frame.rows);
-
-    std::vector<Point2i> coords = controller.lane_segment(frame);
-    controller.run_mpc(coords);
+    VideoCapture cap("../res/car_rgb_xtion.avi");
+    //frame = cv::imread("../res/test2.jpg");
+    cap.read(frame);
+    LaneController controller(frame.cols, frame.rows);
+    while (cap.read(frame))
+    {
+        //cap >> frame;
+        //imshow("frame",frame);
+        //waitKey(1);
+        std::vector<Point2i> coords = controller.lane_segment(frame);
+        if (coords.size() >= 6)
+        {
+            std::vector<double> solution = controller.run_mpc(coords);
+            controller.draw_mpc(solution);
+        }
+        else
+        {
+            controller.classic_lane_follow(frame);
+        }
+    }
     return 0;
 }
 

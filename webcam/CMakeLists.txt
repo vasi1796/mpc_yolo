@@ -13,6 +13,8 @@ set( THIRD_PARTY_DLLS
    ${CMAKE_SOURCE_DIR}/bin/libvlccore.dll
    ${CMAKE_SOURCE_DIR}/bin/yolo_cpp_dll.dll
    ${CMAKE_SOURCE_DIR}/bin/pthreadVC2.dll
+   ${CMAKE_SOURCE_DIR}/libgcc_s_seh-1.dll
+   ${CMAKE_SOURCE_DIR}/libstdc++-6.dll
 )
 
 find_package(OpenCV)
@@ -26,7 +28,7 @@ link_directories(src/vlc_sdk/lib)
 
 add_executable(${PROJECT_NAME} ${SOURCES})
 		
-target_link_libraries(${PROJECT_NAME} ${OpenCV_LIBS} "${CMAKE_SOURCE_DIR}/lib/yolo_cpp_dll.lib" libvlc.lib)
+target_link_libraries(${PROJECT_NAME} ${OpenCV_LIBS} "${CMAKE_SOURCE_DIR}/lib/yolo_cpp_dll.lib" libvlc.lib libvlccore.lib)
 
 add_custom_target(copy-runtime-files ALL
     COMMAND cmake -E copy_directory "${CMAKE_SOURCE_DIR}/bin" "${CMAKE_BINARY_DIR}/$<CONFIG>/"

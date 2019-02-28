@@ -46,3 +46,5 @@ webcam/res/yolov3\.txt
 webcam/res/yolov3\.weights
 
 webcam/bin/plugins/
+
+lane_follower/res/car_rgb_xtion\.avi

@@ -34,6 +34,8 @@ private:
     const int m_cropYOorigin = 170;
     const int m_laneThreshold = 75;
     const int m_minArea = 1500;
+    const Scalar m_green_range_start = Scalar(30, 0, 100);
+    const Scalar m_green_range_end = Scalar(85, 255, 255);
     int m_width;
     int m_height;
     int m_slicedH;

@@ -1,0 +1,2 @@
+For configuring video transfer on startup:
+1) run configure_startup_apps.sh

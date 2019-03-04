@@ -48,3 +48,9 @@ webcam/res/yolov3\.weights
 webcam/bin/plugins/
 
 lane_follower/res/car_rgb_xtion\.avi
+
+neural_rtsp_client/bin/plugins/
+
+neural_rtsp_client/build/
+
+*.weights

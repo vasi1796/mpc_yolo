@@ -64,8 +64,8 @@ namespace utilities
         {
             double dx = coord.x - px;
             double dy = coord.y - py;
-            waypoints_x.push_back(dx * cos_psi - dy * sin_psi);
-            waypoints_y.push_back(dx * sin_psi + dy * cos_psi);
+            waypoints_x.push_back(dx * cos_psi + dy * sin_psi);
+            waypoints_y.push_back(-dx * sin_psi + dy * cos_psi);
         }
 
         double *ptrx = &waypoints_x[0];

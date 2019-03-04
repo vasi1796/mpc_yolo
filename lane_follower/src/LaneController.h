@@ -17,9 +17,9 @@ class LaneController
 public:
     LaneController(int width, int height);
 
-    std::vector<Point2i> lane_segment(const Mat &frame);
+    std::vector<Point2d> lane_segment(const Mat &frame);
 
-    std::vector<double> run_mpc(std::vector<Point2i> coords);
+    std::vector<double> run_mpc(std::vector<Point2d> coords);
 
     void draw_mpc(std::vector<double> mpc_result);
 

@@ -19,7 +19,7 @@ LaneController::LaneController(int width, int height) :
     m_inv_perspectiveMatrix = getPerspectiveTransform(m_perspectiveDst, m_perspectiveSrc);
 }
 
-std::vector<double> LaneController::run_mpc(std::vector<Point2i> coords)
+std::vector<double> LaneController::run_mpc(std::vector<Point2d> coords)
 {
     std::vector<Eigen::Map<Eigen::VectorXd>> mpc_coords_rot = utilities::rotate_coords(coords);
     MPC mpc;
@@ -41,7 +41,7 @@ std::vector<double> LaneController::run_mpc(std::vector<Point2i> coords)
     return vars;
 }
 
-std::vector<Point2i> LaneController::lane_segment(const Mat &frame)
+std::vector<Point2d> LaneController::lane_segment(const Mat &frame)
 {
 
     const int num_slices = 6;
@@ -51,7 +51,7 @@ std::vector<Point2i> LaneController::lane_segment(const Mat &frame)
     double lane_center_x;
     double lane_center_y;
 
-    std::vector<Point2i> center_points;
+    std::vector<Point2d> center_points;
     std::vector<Mat> slices;
     std::vector<std::vector<Point>> slice_contours;
     std::vector<std::vector<Point>> contours;
@@ -115,7 +115,7 @@ std::vector<Point2i> LaneController::lane_segment(const Mat &frame)
             lane_center_y = mu.m01 / mu.m00;
             Point2d center(lane_center_x, lane_center_y);
             //save points with y inverted because of origin system
-            center_points.emplace_back(lane_center_x-m_slicedW/2.0, m_slicedH - lane_center_y);
+            center_points.emplace_back((lane_center_x-m_slicedW/2.0-40)/2, m_slicedH - lane_center_y);
             circle(maskImage, center, 5, Scalar(255, 0, 255), -1);
         }
     }

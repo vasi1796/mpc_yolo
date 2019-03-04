@@ -51,7 +51,7 @@ namespace utilities
         return result;
     }
 
-    static std::vector<Eigen::Map<Eigen::VectorXd>> rotate_coords(const std::vector<cv::Point2i> &coords)
+    static std::vector<Eigen::Map<Eigen::VectorXd>> rotate_coords(const std::vector<cv::Point2d> &coords)
     {
         //adjust points in ref to be in front of car, apply angle transformation
         const double px = coords[0].x;
@@ -64,8 +64,8 @@ namespace utilities
         {
             double dx = coord.x - px;
             double dy = coord.y - py;
-            waypoints_x.push_back(dx * cos_psi + dy * sin_psi);
-            waypoints_y.push_back(-dx * sin_psi + dy * cos_psi);
+            waypoints_x.push_back(coord.x * cos_psi - coord.y * sin_psi);
+            waypoints_y.push_back(coord.x * sin_psi + coord.y * cos_psi);
         }
 
         double *ptrx = &waypoints_x[0];

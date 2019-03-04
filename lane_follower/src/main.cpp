@@ -16,7 +16,7 @@ int main()
         //cap >> frame;
         //imshow("frame",frame);
         //waitKey(1);
-        std::vector<Point2i> coords = controller.lane_segment(frame);
+        std::vector<Point2d> coords = controller.lane_segment(frame);
         if (coords.size() >= 6)
         {
             std::vector<double> solution = controller.run_mpc(coords);

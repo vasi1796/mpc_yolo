@@ -11,9 +11,9 @@ namespace utilities
 {
     static constexpr double pi() { return M_PI; }
 
-    static double deg2rad(double x) { return x * pi() / 180; }
+    inline double deg2rad(double x) { return x * pi() / 180; }
 
-    static double rad2deg(double x) { return x * 180 / pi(); }
+    inline double rad2deg(double x) { return x * 180 / pi(); }
 
 // Evaluate a polynomial.
     static double polyeval(Eigen::VectorXd coeffs, double x)
@@ -26,7 +26,7 @@ namespace utilities
         return result;
     }
 
-    static Eigen::VectorXd polyfit(Eigen::VectorXd xvals, Eigen::VectorXd yvals,
+    static Eigen::VectorXd polyfit(const Eigen::VectorXd &xvals, const Eigen::VectorXd &yvals,
                             int order)
     {
         assert(xvals.size() == yvals.size());
@@ -54,16 +54,12 @@ namespace utilities
     static std::vector<Eigen::Map<Eigen::VectorXd>> rotate_coords(const std::vector<cv::Point2d> &coords)
     {
         //adjust points in ref to be in front of car, apply angle transformation
-        const double px = coords[0].x;
-        const double py = coords[0].y;
         const double sin_psi = sin(deg2rad(-90));
         const double cos_psi = cos(deg2rad(-90));
         std::vector<double> waypoints_x;
         std::vector<double> waypoints_y;
         for (auto &coord : coords)
         {
-            double dx = coord.x - px;
-            double dy = coord.y - py;
             waypoints_x.push_back(coord.x * cos_psi - coord.y * sin_psi);
             waypoints_y.push_back(coord.x * sin_psi + coord.y * cos_psi);
         }

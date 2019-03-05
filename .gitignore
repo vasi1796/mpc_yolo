@@ -54,3 +54,5 @@ neural_rtsp_client/bin/plugins/
 neural_rtsp_client/build/
 
 *.weights
+
+test_server/build/

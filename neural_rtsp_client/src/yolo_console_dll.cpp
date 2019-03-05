@@ -15,7 +15,7 @@
 #endif
 
 #include "yolo_v2_class.hpp"    // imported functions from DLL
-
+#include "Client.h"
 #include <opencv2/opencv.hpp>            // C++
 #include "opencv2/core/version.hpp"
 #ifndef CV_VERSION_EPOCH
@@ -23,7 +23,7 @@
 
 #include "vlc/vlc.h"
 
-void draw_boxes(cv::Mat mat_img, std::vector<bbox_t> result_vec, std::vector<std::string> obj_names,
+void draw_boxes(cv::Mat mat_img, std::vector<bbox_t> result_vec, std::vector<std::string> obj_names, Client &client,
     int current_det_fps = -1, int current_cap_fps = -1)
 {
     int const colors[6][3] = { { 1,0,1 },{ 0,0,1 },{ 0,1,1 },{ 0,1,0 },{ 1,1,0 },{ 1,0,0 } };
@@ -41,6 +41,7 @@ void draw_boxes(cv::Mat mat_img, std::vector<bbox_t> result_vec, std::vector<std
                 cv::Point2f(std::min((int)i.x + max_width, mat_img.cols - 1), std::min((int)i.y, mat_img.rows - 1)),
                 color, CV_FILLED, 8, 0);
             putText(mat_img, obj_name, cv::Point2f(i.x, i.y - 10), cv::FONT_HERSHEY_COMPLEX_SMALL, 1.2, cv::Scalar(0, 0, 0), 2);
+            client.send("stop");
         }
 
     }
@@ -187,8 +188,9 @@ int main(int argc, char *argv[])
     cv::namedWindow(winName, cv::WINDOW_AUTOSIZE);
     cv::Mat frame;
     int key = 0;
-    cv::VideoCapture cap(0);
+    //cv::VideoCapture cap(0);
     // Endless loop, press Esc to quit
+    Client client("192.168.43.242");
     while (key != 27)
     {
         // Check for invalid input
@@ -201,7 +203,7 @@ int main(int argc, char *argv[])
         if (frame.rows == 0 || frame.cols == 0)
             continue;
         std::vector<bbox_t> result_vec = detector.detect(frame);
-        draw_boxes(frame, result_vec, obj_names);
+        draw_boxes(frame, result_vec, obj_names,client);
         cv::imshow(winName, frame);
         key = cv::waitKey(33);
     }

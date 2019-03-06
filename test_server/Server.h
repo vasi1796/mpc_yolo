@@ -3,12 +3,13 @@
 #include <boost/asio.hpp>
 #include <iostream>
 #include <thread>
+#include <atomic>
 
 using boost::asio::ip::tcp;
 using boost::asio::io_service;
 using boost::system::error_code;
 
-class Server {
+class TcpServer {
 
 private:
 	io_service svc;
@@ -17,14 +18,13 @@ private:
 	std::array<char, 32> buffer;
 	std::thread serverThread;
 
-
 	void handle_accept() {
 		auto socket = std::make_shared<tcp::socket>(svc);
 		acc.async_accept(*socket, [&, socket](error_code error) {
 			if (error)
 				std::cerr << "client connection failed: " << error.message() << "\n";
 			else {
-				printf("client connected\n");
+				std::cout << "client connected\n";
 				handle_session(socket);
 			}
 		});
@@ -36,7 +36,12 @@ private:
 				std::cout << "client disconnected: " << error.message() << "\n";
 
 			else {
-				printf(buffer.data());
+				
+				if (strcmp(buffer.data(), "stop") == 0) 
+					stop = true;
+				else
+					stop = false;
+
 				std::fill(std::begin(buffer), std::end(buffer), 0);
 
 				handle_session(socket);
@@ -48,10 +53,18 @@ private:
 
 public:
 
-	Server() :acc(svc) {
+	TcpServer() :
+		acc(svc),
+		stop(false)
+	{
 		acc.open(tcp::v4());
 		acc.bind({ {},8888 });
 		acc.listen(1);
+	}
+
+	~TcpServer() {
+		if(serverThread.joinable())
+			serverThread.join();
 	}
 
 	void run() {
@@ -60,4 +73,6 @@ public:
 			svc.run();
 		});
 	}
+
+	std::atomic_bool stop;
 };

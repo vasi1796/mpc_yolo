@@ -27,10 +27,10 @@ void draw_boxes(cv::Mat mat_img, std::vector<bbox_t> result_vec, std::vector<std
     int current_det_fps = -1, int current_cap_fps = -1)
 {
     int const colors[6][3] = { { 1,0,1 },{ 0,0,1 },{ 0,1,1 },{ 0,1,0 },{ 1,1,0 },{ 1,0,0 } };
-
+    bool detected_stop = false;
     for (auto &i : result_vec) {
         std::string obj_name = obj_names[i.obj_id];
-        if (obj_name == "car")
+        if (obj_name == "car" || obj_name == "stop sign")
         {
             cv::Scalar color = obj_id_to_color(i.obj_id);
             cv::rectangle(mat_img, cv::Rect(i.x, i.y, i.w, i.h), color, 2);
@@ -41,14 +41,25 @@ void draw_boxes(cv::Mat mat_img, std::vector<bbox_t> result_vec, std::vector<std
                 cv::Point2f(std::min((int)i.x + max_width, mat_img.cols - 1), std::min((int)i.y, mat_img.rows - 1)),
                 color, CV_FILLED, 8, 0);
             putText(mat_img, obj_name, cv::Point2f(i.x, i.y - 10), cv::FONT_HERSHEY_COMPLEX_SMALL, 1.2, cv::Scalar(0, 0, 0), 2);
-            client.send("stop");
+            if (obj_name == "stop sign") 
+            {
+                detected_stop = true;
+            }
         }
-
     }
     if (current_det_fps >= 0 && current_cap_fps >= 0) {
         std::string fps_str = "FPS detection: " + std::to_string(current_det_fps) + "   FPS capture: " + std::to_string(current_cap_fps);
         putText(mat_img, fps_str, cv::Point2f(10, 20), cv::FONT_HERSHEY_COMPLEX_SMALL, 1.2, cv::Scalar(50, 255, 0), 2);
     }
+    if (detected_stop) 
+    {
+        client.send("stop");
+    }
+    else 
+    {
+        client.send("go");
+    }
+    
 }
 #endif    // OPENCV
 

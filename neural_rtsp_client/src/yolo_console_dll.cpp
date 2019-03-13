@@ -23,6 +23,8 @@
 
 #include "vlc/vlc.h"
 
+#define PARK_KEY 112
+
 void draw_boxes(cv::Mat mat_img, std::vector<bbox_t> result_vec, std::vector<std::string> obj_names, Client &client,
     int current_det_fps = -1, int current_cap_fps = -1)
 {
@@ -75,7 +77,7 @@ std::vector<std::string> objects_names_from_file(std::string const filename) {
 // RTSP address
 const char* rtspAddress = "rtsp://192.168.43.242:8558/usb1";
 // Video resolution WxH
-cv::Size rtspRes(1280, 620);
+cv::Size rtspRes(640, 480);
 
 struct VideoDataStruct
 {
@@ -217,6 +219,10 @@ int main(int argc, char *argv[])
         draw_boxes(frame, result_vec, obj_names,client);
         cv::imshow(winName, frame);
         key = cv::waitKey(33);
+        if (key == PARK_KEY) 
+        {
+            client.send("park");
+        }
     }
     libvlc_release(inst);
 

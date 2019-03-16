@@ -13,10 +13,93 @@ LaneController::LaneController(int width, int height) :
         m_perspectiveSrc{Point2f(m_slicedW / 2.f - 50, 20), Point2f(150, m_slicedH),
                          Point2f(m_slicedW - 20, m_slicedH), Point2f(m_slicedW / 2.f + 80, 20)},
         m_perspectiveDst{Point2f(150, 0), Point2f(150, m_slicedH), Point2f(m_slicedW, m_slicedH),
-                         Point2f(m_slicedW, 0)}
+                         Point2f(m_slicedW, 0)},
+                         m_state(DRIVE)
 {
     m_perspectiveMatrix = getPerspectiveTransform(m_perspectiveSrc, m_perspectiveDst);
     m_inv_perspectiveMatrix = getPerspectiveTransform(m_perspectiveDst, m_perspectiveSrc);
+    m_server.run();
+    m_detector.setDictionary("ARUCO_MIP_36h12", 0.f);
+    //m_cameraParams.readFromXMLFile("/home/car/cameraCalib.yml");
+}
+
+void LaneController::run(Mat &frame)
+{
+    switch(m_state)
+    {
+        case DRIVE:
+            {
+                drive(frame);
+                break;
+            }
+        case PARK:{
+            check_park_signal();
+            double markerArea = m_parkMarker.getArea();
+            const int camera_offset = 30;
+            m_parkMarker.draw(m_drawingFrame, Scalar(255, 0, 0), 2);
+            if (markerArea < 25000)
+            {
+                double sign_center = m_parkMarker.getCenter().x;
+                double off_center;
+                double steering;
+
+                off_center = (((m_width / 2) - sign_center) * -1) - camera_offset;
+                steering = get_steering(off_center);
+            }
+            break;
+        }
+        case STOP:
+            {
+                check_stop_signal();
+                break;
+            }
+    }
+
+}
+
+
+void LaneController::check_park_signal()
+{
+    if(m_server.park.load())
+    {
+        std::vector<aruco::Marker> markers = m_detector.detect(m_drawingFrame, m_cameraParams, m_markerSize);
+        for (auto &marker : markers)
+        {
+            m_parkMarker = marker;
+            m_state = PARK;
+            break;
+        }
+    }
+}
+
+void LaneController::check_stop_signal()
+{
+    if (m_server.stop.load())
+    {
+        m_state = STOP;
+    }
+    else
+    {
+        m_state = DRIVE;
+    }
+}
+
+
+void LaneController::drive(Mat &frame)
+{
+    m_drawingFrame = frame.clone();
+    vector<Point2d> coords = lane_segment(frame);
+    if (coords.size() >= 6)
+    {
+        vector<double> solution = run_mpc(coords);
+        draw_mpc(solution);
+    }
+    else
+    {
+        classic_lane_follow(frame);
+    }
+    imshow("window", m_drawingFrame);
+    waitKey(1);
 }
 
 std::vector<double> LaneController::run_mpc(std::vector<Point2d> coords)
@@ -124,9 +207,11 @@ std::vector<Point2d> LaneController::lane_segment(const Mat &frame)
     //unwarp area of interest and add on cropped image
     warpPerspective(maskImage, undistorted, m_inv_perspectiveMatrix, Size(m_slicedW, m_slicedH));
     addWeighted(cropped, 1.0, undistorted, 1.0, 0, cropped);
-    m_frameMpc = cropped.clone();
-    //imshow("final", cropped);
-    //waitKey(1);
+    m_drawingFrame = cropped.clone();
+    cv::Mat top;
+    frame(Rect(0, 0, m_slicedW, m_cropYOorigin)).copyTo(top);
+    vconcat(std::vector<cv::Mat>({top,m_drawingFrame}),m_drawingFrame);
+
     return center_points;
 }
 
@@ -136,13 +221,13 @@ void LaneController::draw_mpc(std::vector<double> mpc_result)
     const double cos_psi = cos(utilities::deg2rad(90));
     for (int index = 2; index < mpc_result.size() - 1; index += 2)
     {
-        int x = int(((mpc_result[index] * cos_psi - mpc_result[index + 1] * sin_psi) * 800 + 11 ) / 20 * m_frameMpc.cols);
-        int y = int(m_frameMpc.rows - (mpc_result[index] * sin_psi + mpc_result[index + 1] * cos_psi) * 50 / 22 * m_frameMpc.rows);
+        int x = int(
+                ((mpc_result[index] * cos_psi - mpc_result[index + 1] * sin_psi) * 800 + 11) / 20 * m_drawingFrame.cols);
+        int y = int(m_drawingFrame.rows -
+                    (mpc_result[index] * sin_psi + mpc_result[index + 1] * cos_psi) * 50 / 22 * m_drawingFrame.rows);
         //std::cout<<mpc_result[index] * cos_psi - mpc_result[index + 1] * sin_psi<<std::endl;
-        circle(m_frameMpc, Point2i(x, y), 3, Scalar(255, 0, 0), -1);
-     }
-    imshow("window", m_frameMpc);
-    waitKey(1);
+        circle(m_drawingFrame, Point2i(x, y), 3, Scalar(255, 0, 0), -1);
+    }
 }
 
 void LaneController::classic_lane_follow(Mat &frame)
@@ -161,8 +246,6 @@ void LaneController::classic_lane_follow(Mat &frame)
         off_center = (((m_width / 2.0) - lane_center) * -1) - camera_offset;
         steering = get_steering(off_center);
     }
-    imshow("window", frame);
-    cv::waitKey(1);
 }
 
 double LaneController::track_lane(Mat &frame)
@@ -206,14 +289,14 @@ double LaneController::track_lane(Mat &frame)
         double area = contourArea(contour);
 
         if (area > valid_area)
-        { // ar tri sa fie numa unu
+        {
             //cout << "area size: " << area << endl;
-            drawContours(frame, std::vector<vector<Point>>(1, contour), -1, Scalar(0, 0, 255));
+            drawContours(m_drawingFrame, std::vector<vector<Point>>(1, contour), -1, Scalar(0, 0, 255));
             Moments mu;
             mu = moments(contour, false);
             lane_center = mu.m10 / mu.m00;
             Point2f center(lane_center, slice_y + (slice_height / 2));
-            circle(frame, center, 5, Scalar(0, 0, 255), -1);
+            circle(m_drawingFrame, center, 5, Scalar(0, 0, 255), -1);
         }
     }
 

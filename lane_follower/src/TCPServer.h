@@ -7,9 +7,8 @@
 
 using boost::asio::ip::tcp;
 using boost::asio::io_service;
-using boost::system::error_code;
 
-class TcpServer {
+class TCPServer {
 
 private:
 	io_service svc;
@@ -20,7 +19,7 @@ private:
 
 	void handle_accept() {
 		auto socket = std::make_shared<tcp::socket>(svc);
-		acc.async_accept(*socket, [&, socket](error_code error) {
+		acc.async_accept(*socket, [&, socket](boost::system::error_code error) {
 			if (error)
 				std::cerr << "client connection failed: " << error.message() << "\n";
 			else {
@@ -31,16 +30,25 @@ private:
 	};
 
 	void handle_session(std::shared_ptr<tcp::socket> socket) {
-		socket->async_read_some(boost::asio::buffer(buffer), [&, socket](error_code error, size_t bytes) {
+		socket->async_read_some(boost::asio::buffer(buffer), [&, socket](boost::system::error_code error, size_t bytes) {
 			if (error)
 				std::cout << "client disconnected: " << error.message() << "\n";
 
 			else {
-				
-				if (strcmp(buffer.data(), "stop") == 0) 
+
+				if (strcmp(buffer.data(), "stop") == 0)
+				{
 					stop = true;
+				}
+				else if(strcmp(buffer.data(), "park") == 0)
+				{
+					park = true;
+				}
 				else
+				{
 					stop = false;
+				}
+
 
 				std::fill(std::begin(buffer), std::end(buffer), 0);
 
@@ -53,16 +61,20 @@ private:
 
 public:
 
-	TcpServer() :
-		acc(svc),
-		stop(false)
+	std::atomic_bool stop;
+	std::atomic_bool park;
+
+	TCPServer() :
+			acc(svc),
+			stop(false),
+			park(false)
 	{
 		acc.open(tcp::v4());
 		acc.bind({ {},8888 });
 		acc.listen(1);
 	}
 
-	~TcpServer() {
+	~TCPServer() {
 		if(serverThread.joinable())
 			serverThread.join();
 	}
@@ -73,6 +85,4 @@ public:
 			svc.run();
 		});
 	}
-
-	std::atomic_bool stop;
 };

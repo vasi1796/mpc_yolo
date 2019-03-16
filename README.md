@@ -1,2 +1,2 @@
-# eurobotics_demo
-Demo repo for eurobotics forum 2019.
+# mpc_yolo
+Code for final year project

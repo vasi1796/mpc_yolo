@@ -9,24 +9,24 @@
 #include <mutex>              // std::mutex, std::unique_lock
 #include <condition_variable> // std::condition_variable
 
-#ifdef _WIN32
 #define OPENCV
 #define GPU
-#endif
 
 #include "yolo_v2_class.hpp"    // imported functions from DLL
 #include "Client.h"
 #include <opencv2/opencv.hpp>            // C++
 #include "opencv2/core/version.hpp"
-#ifndef CV_VERSION_EPOCH
 #include "opencv2/videoio/videoio.hpp"
 
 #include "vlc/vlc.h"
 
 #define PARK_KEY 112
+int DONE = 0;
+libvlc_media_player_t *mp;
+unsigned int videoBufferSize = 0;
+uint8_t *videoBuffer = 0;
 
-void draw_boxes(cv::Mat mat_img, std::vector<bbox_t> result_vec, std::vector<std::string> obj_names, Client &client,
-    int current_det_fps = -1, int current_cap_fps = -1)
+void draw_boxes(cv::Mat mat_img, std::vector<bbox_t> result_vec, std::vector<std::string> obj_names, Client &client)
 {
     int const colors[6][3] = { { 1,0,1 },{ 0,0,1 },{ 0,1,1 },{ 0,1,0 },{ 1,1,0 },{ 1,0,0 } };
     bool detected_stop = false;
@@ -36,7 +36,10 @@ void draw_boxes(cv::Mat mat_img, std::vector<bbox_t> result_vec, std::vector<std
         {
             cv::Scalar color = obj_id_to_color(i.obj_id);
             cv::rectangle(mat_img, cv::Rect(i.x, i.y, i.w, i.h), color, 2);
-            if (i.track_id > 0) obj_name += " - " + std::to_string(i.track_id);
+            if (i.track_id > 0) 
+            {
+                obj_name += " - " + std::to_string(i.track_id);
+            }
             cv::Size const text_size = getTextSize(obj_name, cv::FONT_HERSHEY_COMPLEX_SMALL, 1.2, 2, 0);
             int const max_width = (text_size.width > i.w + 2) ? text_size.width : (i.w + 2);
             cv::rectangle(mat_img, cv::Point2f(std::max((int)i.x - 1, 0), std::max((int)i.y - 30, 0)),
@@ -49,10 +52,6 @@ void draw_boxes(cv::Mat mat_img, std::vector<bbox_t> result_vec, std::vector<std
             }
         }
     }
-    if (current_det_fps >= 0 && current_cap_fps >= 0) {
-        std::string fps_str = "FPS detection: " + std::to_string(current_det_fps) + "   FPS capture: " + std::to_string(current_cap_fps);
-        putText(mat_img, fps_str, cv::Point2f(10, 20), cv::FONT_HERSHEY_COMPLEX_SMALL, 1.2, cv::Scalar(50, 255, 0), 2);
-    }
     if (detected_stop) 
     {
         client.send("stop");
@@ -61,9 +60,7 @@ void draw_boxes(cv::Mat mat_img, std::vector<bbox_t> result_vec, std::vector<std
     {
         client.send("go");
     }
-    
 }
-#endif    // OPENCV
 
 std::vector<std::string> objects_names_from_file(std::string const filename) {
     std::ifstream file(filename);
@@ -74,20 +71,10 @@ std::vector<std::string> objects_names_from_file(std::string const filename) {
     return file_lines;
 }
 
-// RTSP address
-const char* rtspAddress = "rtsp://192.168.43.242:8558/usb1";
-// Video resolution WxH
-cv::Size rtspRes(640, 480);
-
 struct VideoDataStruct
 {
     int param;
 };
-
-int done = 0;
-libvlc_media_player_t *mp;
-unsigned int videoBufferSize = 0;
-uint8_t *videoBuffer = 0;
 
 void cbVideoPrerender(void *p_video_data, uint8_t **pp_pixel_buffer, int size)
 {
@@ -106,7 +93,6 @@ void cbVideoPostrender(void *p_video_data, uint8_t *p_pixel_buffer, int width, i
 {
     // Unlocking
     //CloseHandle(hMutex);
-
 }
 
 static void handleEvent(const libvlc_event_t* pEvt, void* pUserData)
@@ -120,7 +106,7 @@ static void handleEvent(const libvlc_event_t* pEvt, void* pUserData)
         break;
     case libvlc_MediaPlayerEndReached:
         printf("MediaPlayerEndReached\n");
-        done = 1;
+        DONE = 1;
         break;
     default:
         printf("%s\n", libvlc_event_type_name(pEvt->type));
@@ -132,16 +118,20 @@ int main(int argc, char *argv[])
     std::string  names_file = "../res/yolov3.txt";
     std::string  cfg_file = "../res/yolov3.cfg";
     std::string  weights_file = "../res/yolov3.weights";
-    std::string filename;
 
-    if (argc > 4) {    //voc.names yolo-voc.cfg yolo-voc.weights test.mp4        
+    // RTSP address
+    const char* rtspAddress = "rtsp://192.168.43.163:8558/usb1";
+
+    // Video resolution WxH
+    cv::Size rtspRes(640, 480);
+
+    if (argc > 4) {    //voc.names yolo-voc.cfg yolo-voc.weights    
         names_file = argv[1];
         cfg_file = argv[2];
         weights_file = argv[3];
-        filename = argv[4];
     }
 
-    float const thresh = (argc > 5) ? std::stof(argv[5]) : 0.20;
+    float const thresh = 0.20;
 
     Detector detector(cfg_file, weights_file);
 
@@ -203,7 +193,7 @@ int main(int argc, char *argv[])
     int key = 0;
     //cv::VideoCapture cap(0);
     // Endless loop, press Esc to quit
-    Client client("192.168.43.242");
+    Client client("192.168.43.163");
     while (key != 27)
     {
         // Check for invalid input

@@ -3,7 +3,7 @@ cmake_minimum_required(VERSION 3.0 FATAL_ERROR)
 project(neural_rtsp_client)
 
 set(SOURCES
-    src/yolo_console_dll.cpp
+    src/yolo_rtsp.cpp
     src/yolo_v2_class.hpp
     src/darknet.h
     src/Client.h

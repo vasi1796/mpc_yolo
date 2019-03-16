@@ -1,2 +1,2 @@
 # mpc_yolo
-Code for final year project
+Code for diploma project.

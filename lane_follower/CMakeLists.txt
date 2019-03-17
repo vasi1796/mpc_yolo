@@ -6,12 +6,13 @@ set(SOURCES src/main.cpp src/utilities.hpp src/MPC.cpp src/MPC.h src/LaneControl
 
 find_package(OpenCV REQUIRED)
 find_package(Boost REQUIRED)
+find_package(Eigen3 REQUIRED)
 
 include_directories(${aruco_INCLUDE_DIR})
 include_directories(${Boost_INCLUDE_DIR})
 include_directories(/usr/local/include)
 include_directories(${OpenCV_INCLUDE_DIRS})
-include_directories(src/Eigen-3.3)
+include_directories (${EIGEN3_INCLUDE_DIR})
 link_directories(${OpenCV_LIB_DIR})
 link_directories(/usr/local/lib)
 

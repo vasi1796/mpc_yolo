@@ -7,14 +7,13 @@
         - gcc
      
     before_script:
-        - sudo apt-get install build-essential
-        - sudo apt-get install cmake
-        - sudo apt-get install libboost-all-dev
-        - sudo apt-get install unzip
-        - sudo apt-get install libeigen3-dev
-        # opencv dependencies
         - sudo apt-get install -y build-essential
-        - sudo apt-get install -y cmake git libgtk2.0-dev pkg-config libavcodec-dev libavformat-dev libswscale-dev
+        - sudo apt-get install -y cmake
+        - sudo apt-get install -y libboost-all-dev
+        - sudo apt-get install -y unzip
+        - sudo apt-get install -y libeigen3-dev
+        # opencv dependencies
+        - sudo apt-get install -y git libgtk2.0-dev pkg-config libavcodec-dev libavformat-dev libswscale-dev
         - sudo apt-get install -y python-dev python-numpy libtbb2 libtbb-dev libjpeg-dev libpng-dev libtiff-dev libjasper-dev libdc1394-22-dev
         # opencv
         - wget -O opencv-3.1.0.zip https://github.com/opencv/opencv/archive/3.1.0.zip

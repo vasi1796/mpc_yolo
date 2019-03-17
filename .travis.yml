@@ -16,7 +16,6 @@
         - cd opencv-3.1.0
         - mkdir build
         - cd build 
-        - python -m pip install numpy
         - cmake -D CMAKE_BUILD_TYPE=RELEASE -D WITH_IPP=ON -D BUILD_EXAMPLES=OFF -D BUILD_DOCS=OFF -D BUILD_PERF_TESTS=OFF -D BUILD_TESTS=OFF CMAKE_INSTALL_PREFIX=/usr/local/ ..
         - make -j4
         - sudo make install

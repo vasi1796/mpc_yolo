@@ -11,6 +11,7 @@
         - sudo apt-get install cmake
         - sudo apt-get install libboost-all-dev
         - sudo apt-get install libopencv-dev
+        - sudo ldconfig
         - wget https://sourceforge.net/projects/aruco/files/3.1.0/aruco-3.1.0.zip
         - sudo apt-get install unzip
         - unzip aruco-3.1.0.zip
@@ -20,6 +21,7 @@
         - cmake ..
         - make
         - sudo make install
+        - sudo ldconfig
      
     script:
         - cd lane_follower

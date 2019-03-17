@@ -10,10 +10,19 @@
         - sudo apt-get install build-essential
         - sudo apt-get install cmake
         - sudo apt-get install libboost-all-dev
-        - sudo apt-get install libopencv-dev
-        - sudo ldconfig
-        - wget https://sourceforge.net/projects/aruco/files/3.1.0/aruco-3.1.0.zip
         - sudo apt-get install unzip
+        - wget -O opencv-3.1.0.zip https://github.com/opencv/opencv/archive/3.1.0.zip
+        - unzip opencv-3.1.0.zip
+        - cd opencv-3.1.0
+        - mkdir build
+        - cd build 
+        - python -m pip install numpy
+        - cmake -D CMAKE_BUILD_TYPE=RELEASE -D WITH_IPP=ON -D BUILD_EXAMPLES=OFF -D BUILD_DOCS=OFF -D BUILD_PERF_TESTS=OFF -D BUILD_TESTS=OFF CMAKE_INSTALL_PREFIX=/usr/local/ ..
+        - make -j4
+        - sudo make install
+        - sudo ldconfig
+        - cd ../../
+        - wget https://sourceforge.net/projects/aruco/files/3.1.0/aruco-3.1.0.zip
         - unzip aruco-3.1.0.zip
         - cd aruco-3.1.0
         - mkdir build 
@@ -22,6 +31,7 @@
         - make
         - sudo make install
         - sudo ldconfig
+        - cd ../../
      
     script:
         - cd lane_follower

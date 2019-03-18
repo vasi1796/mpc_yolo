@@ -21,6 +21,7 @@
         # ipopt
         - wget https://www.coin-or.org/download/source/Ipopt/Ipopt-3.12.12.zip
         - unzip Ipopt-3.12.12.zip
+        - sudo chmod 777 install_ipopt.sh
         - ./install_ipopt.sh Ipopt-3.12.12
         # opencv
         - wget -O opencv-3.1.0.zip https://github.com/opencv/opencv/archive/3.1.0.zip

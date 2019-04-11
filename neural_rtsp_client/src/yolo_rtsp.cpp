@@ -2,15 +2,11 @@
 #include <iomanip> 
 #include <string>
 #include <vector>
-#include <queue>
 #include <fstream>
-#include <thread>
-#include <atomic>
-#include <mutex>              // std::mutex, std::unique_lock
-#include <condition_variable> // std::condition_variable
 
 #define OPENCV
 #define GPU
+#define PARK_KEY 112
 
 #include "yolo_v2_class.hpp"    // imported functions from DLL
 #include "Client.h"
@@ -20,7 +16,6 @@
 
 #include "vlc/vlc.h"
 
-#define PARK_KEY 112
 int DONE = 0;
 libvlc_media_player_t *mp;
 unsigned int videoBufferSize = 0;
@@ -41,7 +36,7 @@ void draw_boxes(cv::Mat mat_img, std::vector<bbox_t> result_vec, std::vector<std
                 obj_name += " - " + std::to_string(i.track_id);
             }
             cv::Size const text_size = getTextSize(obj_name, cv::FONT_HERSHEY_COMPLEX_SMALL, 1.2, 2, 0);
-            int const max_width = (text_size.width > i.w + 2) ? text_size.width : (i.w + 2);
+            int const max_width = (static_cast<unsigned int>(text_size.width) > i.w + 2) ? text_size.width : (i.w + 2);
             cv::rectangle(mat_img, cv::Point2f(std::max((int)i.x - 1, 0), std::max((int)i.y - 30, 0)),
                 cv::Point2f(std::min((int)i.x + max_width, mat_img.cols - 1), std::min((int)i.y, mat_img.rows - 1)),
                 color, CV_FILLED, 8, 0);
@@ -65,8 +60,14 @@ void draw_boxes(cv::Mat mat_img, std::vector<bbox_t> result_vec, std::vector<std
 std::vector<std::string> objects_names_from_file(std::string const filename) {
     std::ifstream file(filename);
     std::vector<std::string> file_lines;
-    if (!file.is_open()) return file_lines;
-    for (std::string line; getline(file, line);) file_lines.push_back(line);
+    if (!file.is_open()) 
+    {
+        return file_lines;
+    }
+    for (std::string line; getline(file, line);) 
+    {
+        file_lines.push_back(line); 
+    }
     std::cout << "object names loaded \n";
     return file_lines;
 }
@@ -78,7 +79,7 @@ struct VideoDataStruct
 
 void cbVideoPrerender(void *p_video_data, uint8_t **pp_pixel_buffer, int size)
 {
-    if (size > videoBufferSize || !videoBuffer)
+    if (static_cast<unsigned int>(size) > videoBufferSize || !videoBuffer)
     {
         printf("Reallocate raw video buffer %d bytes\n", size);
         free(videoBuffer);
@@ -120,7 +121,7 @@ int main(int argc, char *argv[])
     std::string  weights_file = "../res/yolov3.weights";
 
     // RTSP address
-    const char* rtspAddress = "rtsp://192.168.43.163:8558/usb1";
+    const char* rtspAddress = "rtsp://192.168.43.242:8558/usb1";
 
     // Video resolution WxH
     cv::Size rtspRes(640, 480);
@@ -131,7 +132,7 @@ int main(int argc, char *argv[])
         weights_file = argv[3];
     }
 
-    float const thresh = 0.20;
+    float const thresh = 0.5;
 
     Detector detector(cfg_file, weights_file);
 
@@ -148,7 +149,7 @@ int main(int argc, char *argv[])
     char smem_options[1000];
 
     // RV24
-    sprintf(smem_options
+    sprintf_s(smem_options
         , "#transcode{vcodec=RV24}:smem{"
         "video-prerender-callback=%lld,"
         "video-postrender-callback=%lld,"
@@ -187,13 +188,13 @@ int main(int argc, char *argv[])
     libvlc_media_player_play(mp);
 
     // Create a window for displaying the video
-    std::string winName("Demo Video");
+    std::string winName("RTSP Stream");
     cv::namedWindow(winName, cv::WINDOW_AUTOSIZE);
     cv::Mat frame;
     int key = 0;
     //cv::VideoCapture cap(0);
     // Endless loop, press Esc to quit
-    Client client("192.168.43.163");
+    Client client("192.168.43.242");
     while (key != 27)
     {
         // Check for invalid input
@@ -204,7 +205,9 @@ int main(int argc, char *argv[])
         }
 
         if (frame.rows == 0 || frame.cols == 0)
+        {
             continue;
+        }
         std::vector<bbox_t> result_vec = detector.detect(frame);
         draw_boxes(frame, result_vec, obj_names,client);
         cv::imshow(winName, frame);

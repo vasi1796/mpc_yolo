@@ -3,6 +3,7 @@
 #include <boost/asio.hpp>
 #include <boost/array.hpp>
 #include <iostream>
+#include <atomic>
 
 using boost::asio::ip::tcp;
 using boost::asio::io_service;
@@ -18,7 +19,8 @@ private:
 
 public:
 
-	Client(std::string ip) :sock(ios) {
+	Client(std::string ip) :sock(ios) 
+    {
 		tcp::endpoint endpoint = tcp::endpoint(boost::asio::ip::address::from_string(ip), 8888);
 		sock.connect(endpoint, error);
 
@@ -28,7 +30,8 @@ public:
 			std::cout << "connected to server\n";
 	}
 
-	void send(std::string message) {
+	void send(std::string message) 
+    {
 		std::copy(message.begin(), message.end(), buffer.begin());
 		sock.write_some(boost::asio::buffer(buffer, message.size()), error);
 		if (error)

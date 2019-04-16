@@ -37,7 +37,7 @@ private:
 
     double get_steering(double off_center);
 
-    enum State{DRIVE,PARK,STOP};
+    enum State{INIT,DRIVE,PARK,STOP};
     State m_state;
     Mat m_drawingFrame;
     const int m_cropYOorigin = 170;
@@ -62,6 +62,8 @@ private:
     Mat m_inv_perspectiveMatrix;
 
     void drive(Mat &frame);
+
+    void equalize_illuminance(Mat &distorted);
 };
 
 #endif //LANE_FOLLOWER_LANECONTROLLER_H

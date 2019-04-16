@@ -14,7 +14,7 @@ LaneController::LaneController(int width, int height) :
                          Point2f(m_slicedW - 20, m_slicedH), Point2f(m_slicedW / 2.f + 80, 20)},
         m_perspectiveDst{Point2f(150, 0), Point2f(150, m_slicedH), Point2f(m_slicedW, m_slicedH),
                          Point2f(m_slicedW, 0)},
-                         m_state(DRIVE)
+                         m_state(INIT)
 {
     m_perspectiveMatrix = getPerspectiveTransform(m_perspectiveSrc, m_perspectiveDst);
     m_inv_perspectiveMatrix = getPerspectiveTransform(m_perspectiveDst, m_perspectiveSrc);
@@ -25,65 +25,96 @@ LaneController::LaneController(int width, int height) :
 
 void LaneController::run(Mat &frame)
 {
-    switch(m_state)
+    if (!frame.empty())
     {
-        case DRIVE:
+        switch(m_state)
+        {
+            case INIT:
             {
+                std::vector<Point2d> coords = this->lane_segment(frame);
+                if(!coords.empty())
+                {
+                    m_state = DRIVE;
+                }
+
+                //check parking condition
+                if(m_server.park.load())
+                {
+                    std::vector<aruco::Marker> markers = m_detector.detect(frame, m_cameraParams, m_markerSize);
+                    if(!markers.empty())
+                    {
+                        m_state = PARK;
+                    }
+                }
+                break;
+            }
+            case DRIVE:
+            {
+                //check stop condition
+                if (m_server.stop.load())
+                {
+                    m_state = STOP;
+                    break;
+                }
+
+                //check parking condition
+                if(m_server.park.load())
+                {
+                    std::vector<aruco::Marker> markers = m_detector.detect(frame, m_cameraParams, m_markerSize);
+                    if(!markers.empty())
+                    {
+                        m_state = PARK;
+                        break;
+                    }
+                }
+
                 drive(frame);
                 break;
             }
-        case PARK:{
-            check_park_signal();
-            double markerArea = m_parkMarker.getArea();
-            const int camera_offset = 30;
-            m_parkMarker.draw(m_drawingFrame, Scalar(255, 0, 0), 2);
-            if (markerArea < 25000)
+            case PARK:
             {
-                double sign_center = m_parkMarker.getCenter().x;
-                double off_center;
-                double steering;
+                std::vector<aruco::Marker> markers = m_detector.detect(frame, m_cameraParams, m_markerSize);
+                if(!markers.empty())
+                {
+                    m_parkMarker = markers[0];
+                    double markerArea = m_parkMarker.getArea();
+                    m_drawingFrame = frame.clone();
+                    m_parkMarker.draw(m_drawingFrame, Scalar(255, 0, 0), 2);
+                    const int camera_offset = 30;
+                    if (markerArea < 25000)
+                    {
+                        double sign_center = m_parkMarker.getCenter().x;
+                        double off_center;
+                        double steering;
 
-                off_center = (((m_width / 2) - sign_center) * -1) - camera_offset;
-                steering = get_steering(off_center);
-            }
-            break;
-        }
-        case STOP:
-            {
-                check_stop_signal();
+                        off_center = (((m_width / 2) - sign_center) * -1) - camera_offset;
+                        steering = get_steering(off_center);
+                    }
+                    else
+                    {
+                        m_state = INIT;
+                        m_server.park = false;
+                    }
+                }
+                else
+                {
+                    m_state = INIT;
+                }
                 break;
             }
+            case STOP:
+            {
+                if (!m_server.stop.load())
+                {
+                    m_state = INIT;
+                }
+                drive(frame);
+                break;
+            }
+        };
     }
 
 }
-
-
-void LaneController::check_park_signal()
-{
-    if(m_server.park.load())
-    {
-        std::vector<aruco::Marker> markers = m_detector.detect(m_drawingFrame, m_cameraParams, m_markerSize);
-        for (auto &marker : markers)
-        {
-            m_parkMarker = marker;
-            m_state = PARK;
-            break;
-        }
-    }
-}
-
-void LaneController::check_stop_signal()
-{
-    if (m_server.stop.load())
-    {
-        m_state = STOP;
-    }
-    else
-    {
-        m_state = DRIVE;
-    }
-}
-
 
 void LaneController::drive(Mat &frame)
 {
@@ -158,6 +189,8 @@ std::vector<Point2d> LaneController::lane_segment(const Mat &frame)
 //    threshold(distorted_bw, distorted_bw, m_laneThreshold, 255,
 //              THRESH_BINARY_INV); // sau THRESH_BINARY, si verifici care arie e mare sau offset centers
 //  alternativ color masking (hsv, inRange)
+    equalize_illuminance(distorted);
+
     Mat distorted_hsv;
     cvtColor(distorted, distorted_hsv, cv::COLOR_BGR2HSV);
     inRange(distorted_hsv, m_green_range_start, m_green_range_end, distorted_bw);
@@ -215,6 +248,17 @@ std::vector<Point2d> LaneController::lane_segment(const Mat &frame)
     return center_points;
 }
 
+void LaneController::equalize_illuminance(Mat &distorted)
+{
+    Mat equalized;
+    cvtColor(distorted, equalized, CV_BGR2YUV);
+    vector<Mat> channels;
+    split(equalized, channels);
+    equalizeHist(channels[0], channels[0]);
+    merge(channels, equalized);
+    cvtColor(equalized, distorted, CV_YUV2BGR);
+}
+
 void LaneController::draw_mpc(std::vector<double> mpc_result)
 {
     const double sin_psi = sin(utilities::deg2rad(90));
@@ -260,6 +304,7 @@ double LaneController::track_lane(Mat &frame)
 
     frame(Rect(0, slice_y, m_width, slice_height)).copyTo(sliced);
 
+    equalize_illuminance(sliced);
     Mat sliced_hsv;
     cvtColor(sliced, sliced_hsv, cv::COLOR_BGR2HSV);
     inRange(sliced_hsv, m_green_range_start, m_green_range_end, sliced_bw);

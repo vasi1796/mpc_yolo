@@ -18,6 +18,7 @@ int main()
         //imshow("frame",frame);
         //waitKey(1);
     }
+    cv::destroyAllWindows();
     return 0;
 }
 
